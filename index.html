@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tamara Castro · Automatización & IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=DM+Sans:ital,wght@0,200;0,300;0,400;0,500;1,300&family=Space+Mono:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;1,200;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #060818;
+  --surface: rgba(255,255,255,0.038);
+  --surface2: rgba(255,255,255,0.06);
+  --accent: #7c6fff;
+  --accent2: #06c8ff;
+  --accent3: #a78bfa;
+  --green: #34d399;
+  --text: #eef2ff;
+  --text-muted: rgba(238,242,255,0.5);
+  --border: rgba(255,255,255,0.08);
+  --border-bright: rgba(124,111,255,0.35);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  cursor: none;
+  overflow-x: hidden;
+}
+
+/* ── CURSOR ──────────────────────────────── */
+#cur-dot {
+  position: fixed; width: 5px; height: 5px;
+  background: #fff; border-radius: 50%;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%,-50%); mix-blend-mode: difference;
+}
+#cur-ring {
+  position: fixed; width: 28px; height: 28px;
+  border: 1px solid rgba(124,111,255,.6); border-radius: 50%;
+  pointer-events: none; z-index: 9998;
+  transform: translate(-50%,-50%);
+  transition: width .18s, height .18s, border-color .18s;
+}
+.cur-big { width: 50px !important; height: 50px !important; border-color: rgba(6,200,255,.7) !important; }
+
+/* ── ORBS (background) ───────────────────── */
+.orb {
+  position: fixed; border-radius: 50%;
+  pointer-events: none; filter: blur(80px); z-index: 0;
+}
+.orb-1 { width: 700px; height: 700px; top: -200px; left: -200px; background: radial-gradient(circle, rgba(99,60,255,.12) 0%, transparent 70%); animation: orb-drift 18s ease-in-out infinite alternate; }
+.orb-2 { width: 600px; height: 600px; bottom: -100px; right: -150px; background: radial-gradient(circle, rgba(6,180,255,.1) 0%, transparent 70%); animation: orb-drift 22s ease-in-out infinite alternate-reverse; }
+.orb-3 { width: 400px; height: 400px; top: 50%; left: 50%; margin: -200px 0 0 -200px; background: radial-gradient(circle, rgba(167,139,250,.07) 0%, transparent 70%); animation: orb-drift 14s ease-in-out infinite alternate; }
+@keyframes orb-drift {
+  0% { transform: translate(0,0) scale(1); }
+  100% { transform: translate(30px,20px) scale(1.05); }
+}
+
+
+/* ── NAV ─────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 62px; padding: 0 2.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: background .4s, backdrop-filter .4s, border-color .4s;
+  border-bottom: 1px solid transparent;
+}
+nav.scrolled {
+  background: rgba(6,8,24,.82);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom-color: var(--border);
+}
+.nav-logo {
+  font-family: 'Orbitron', sans-serif; font-size: .9rem;
+  font-weight: 700; letter-spacing: .1em;
+  background: linear-gradient(135deg, var(--accent3), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  text-decoration: none;
+}
+.nav-links { display: flex; gap: 2rem; list-style: none; }
+.nav-links a {
+  font-family: 'Space Mono', monospace; font-size: .62rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-muted); text-decoration: none; transition: color .2s;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-badge {
+  display: flex; align-items: center; gap: .45rem;
+  font-family: 'Space Mono', monospace; font-size: .58rem;
+  color: var(--text-muted); letter-spacing: .06em;
+}
+.live-dot {
+  width: 6px; height: 6px; background: var(--green);
+  border-radius: 50%; animation: blink 2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--green);
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+/* ── HERO ─────────────────────────────────── */
+#hero {
+  position: relative; z-index: 1;
+  min-height: 100vh; padding: 130px 2.5rem 80px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 3rem; align-items: center;
+  max-width: 1200px; margin: 0 auto;
+}
+.hero-left { display: flex; flex-direction: column; }
+
+.hero-pill {
+  display: inline-flex; align-items: center; gap: .5rem;
+  font-family: 'Space Mono', monospace; font-size: .58rem;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--accent3); border: 1px solid rgba(124,111,255,.3);
+  background: rgba(124,111,255,.08); padding: .3rem .75rem;
+  border-radius: 999px; width: fit-content; margin-bottom: 1.75rem;
+  opacity: 0; transform: translateY(10px); animation: fu .5s .1s forwards;
+}
+.hero-pill::before {
+  content: ''; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent3); animation: blink 1.5s infinite;
+}
+
+.hero-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(3.4rem, 6vw, 6rem);
+  font-weight: 200; line-height: .92; letter-spacing: -.03em;
+  margin-bottom: 1.5rem;
+  opacity: 0; transform: translateY(18px); animation: fu .8s .25s forwards;
+}
+.hero-title em { font-style: normal; font-weight: 200; display: block; }
+.hero-title .grad {
+  font-weight: 500;
+  background: linear-gradient(135deg, #a78bfa 0%, #06c8ff 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.hero-desc {
+  font-size: .98rem; font-weight: 300; line-height: 1.8;
+  color: var(--text-muted); max-width: 480px; margin-bottom: 2.25rem;
+  opacity: 0; transform: translateY(10px); animation: fu .6s .5s forwards;
+}
+
+.hero-ctas {
+  display: flex; gap: .85rem; flex-wrap: wrap;
+  opacity: 0; transform: translateY(10px); animation: fu .6s .7s forwards;
+}
+.cta-primary {
+  font-family: 'Space Mono', monospace; font-size: .62rem;
+  letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
+  color: #fff; padding: .85rem 1.75rem; border-radius: 6px; cursor: none;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  transition: opacity .2s, transform .15s; box-shadow: 0 0 20px rgba(124,111,255,.3);
+}
+.cta-primary:hover { opacity: .88; transform: translateY(-2px); }
+.cta-ghost {
+  font-family: 'Space Mono', monospace; font-size: .62rem;
+  letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
+  color: var(--text-muted); padding: .85rem 1.75rem; border-radius: 6px;
+  border: 1px solid var(--border); cursor: none;
+  transition: border-color .2s, color .2s, transform .15s;
+}
+.cta-ghost:hover { border-color: var(--border-bright); color: var(--text); transform: translateY(-2px); }
+
+.hero-stats {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 0; margin-top: 3rem;
+  border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+  background: var(--surface);
+  opacity: 0; transform: translateY(10px); animation: fu .6s .9s forwards;
+}
+.stat-item {
+  padding: 1.25rem 1rem; text-align: center;
+  border-right: 1px solid var(--border); position: relative;
+}
+.stat-item:last-child { border-right: none; }
+.stat-num {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-size: 2.2rem; font-weight: 400; display: block; line-height: 1;
+  background: linear-gradient(135deg, var(--accent3), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.stat-label {
+  font-family: 'Space Mono', monospace; font-size: .5rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-muted); margin-top: .35rem; display: block;
+}
+
+@keyframes fu { to { opacity:1; transform:translateY(0); } }
+
+/* ── ORBITAL VIZ ─────────────────────────── */
+.hero-right {
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; animation: fu .8s .4s forwards;
+  position: relative;
+}
+#orbital-canvas {
+  width: 100%; max-width: 480px; aspect-ratio: 1;
+  display: block;
+}
+
+/* ── SECTIONS ─────────────────────────────── */
+section { position: relative; z-index: 1; padding: 7rem 2.5rem; }
+.section-header { text-align: center; margin-bottom: 4rem; }
+.section-eyebrow {
+  font-family: 'Space Mono', monospace; font-size: .58rem;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--accent3); margin-bottom: .75rem; display: block;
+}
+.section-title {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 300;
+  color: var(--text); line-height: 1.1;
+}
+.section-title strong {
+  font-weight: 400; font-style: normal;
+  background: linear-gradient(135deg, var(--accent3), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* ── REVEAL ──────────────────────────────── */
+.reveal {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* ── PROJECT CARDS ───────────────────────── */
+.projects-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  max-width: 1100px; margin: 0 auto;
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+}
+.proj-card {
+  background: var(--bg); padding: 1.75rem 1.5rem;
+  transition: background .25s; cursor: none; position: relative;
+  overflow: hidden;
+}
+.proj-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--card-grad, linear-gradient(90deg, var(--accent), var(--accent2)));
+  transform: scaleX(0); transform-origin: left;
+  transition: transform .4s cubic-bezier(.4,0,.2,1);
+}
+.proj-card:hover { background: rgba(124,111,255,.04); }
+.proj-card:hover::before { transform: scaleX(1); }
+.proj-card.open { background: rgba(124,111,255,.05); }
+.proj-card.open::before { transform: scaleX(1); }
+
+.proj-num {
+  font-family: 'Space Mono', monospace; font-size: .55rem;
+  letter-spacing: .14em; color: var(--text-muted); margin-bottom: .75rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.proj-num-badge {
+  background: rgba(124,111,255,.12); border: 1px solid rgba(124,111,255,.25);
+  border-radius: 4px; padding: .15rem .45rem; font-size: .52rem;
+}
+.proj-title {
+  font-family: 'Orbitron', sans-serif; font-size: .78rem;
+  font-weight: 500; letter-spacing: .03em; color: var(--text);
+  margin-bottom: .55rem; line-height: 1.4;
+}
+.proj-desc {
+  font-size: .8rem; font-weight: 300; line-height: 1.65;
+  color: var(--text-muted); margin-bottom: 1rem;
+  display: -webkit-box; -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.proj-tags { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: 1rem; }
+.proj-tag {
+  font-family: 'Space Mono', monospace; font-size: .5rem;
+  letter-spacing: .06em; padding: .18rem .45rem;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+  color: var(--text-muted); border-radius: 3px;
+}
+.proj-toggle {
+  font-family: 'Space Mono', monospace; font-size: .55rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--accent3); display: flex; align-items: center; gap: .4rem;
+  border: none; background: none; cursor: none; padding: 0;
+  transition: color .2s;
+}
+.proj-toggle:hover { color: var(--accent2); }
+.proj-toggle-icon {
+  width: 14px; height: 14px; border: 1px solid currentColor;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  transition: transform .3s, background .2s;
+  flex-shrink: 0;
+}
+.proj-card.open .proj-toggle-icon { transform: rotate(45deg); background: rgba(124,111,255,.2); }
+
+.proj-detail {
+  max-height: 0; overflow: hidden;
+  transition: max-height .55s cubic-bezier(.4,0,.2,1), opacity .4s;
+  opacity: 0; border-top: 0 solid var(--border);
+}
+.proj-card.open .proj-detail {
+  max-height: 700px; opacity: 1;
+  border-top-width: 1px; padding-top: 1.25rem; margin-top: 1.25rem;
+}
+.detail-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: .75rem;
+}
+.detail-col h5 {
+  font-family: 'Space Mono', monospace; font-size: .52rem;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--accent3); margin-bottom: .5rem;
+  padding-bottom: .3rem; border-bottom: 1px solid var(--border);
+}
+.detail-col ul { list-style: none; display: flex; flex-direction: column; gap: .35rem; }
+.detail-col li {
+  font-size: .75rem; font-weight: 300; line-height: 1.5;
+  color: var(--text-muted); padding-left: .65rem; position: relative;
+}
+.detail-col li::before {
+  content: '·'; position: absolute; left: 0;
+  color: var(--accent3); font-size: .9rem; line-height: 1.2;
+}
+
+/* ── ECOSYSTEM ───────────────────────────── */
+#stack { background: rgba(124,111,255,.03); }
+.ecosystem-wrap {
+  max-width: 700px; margin: 0 auto; position: relative;
+}
+.ecosystem-canvas-wrap {
+  position: relative; height: 480px;
+}
+#eco-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+}
+.eco-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 90px; height: 90px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 0 40px rgba(124,111,255,.4);
+  z-index: 2;
+}
+.eco-center-label {
+  font-family: 'Orbitron', sans-serif; font-size: .75rem;
+  font-weight: 700; color: #fff; letter-spacing: .06em;
+}
+.eco-center-sub {
+  font-family: 'Space Mono', monospace; font-size: .45rem;
+  color: rgba(255,255,255,.65); letter-spacing: .08em; margin-top: .15rem;
+}
+.eco-node {
+  position: absolute; transform: translate(-50%,-50%);
+  background: rgba(15,18,45,.9); border: 1px solid rgba(124,111,255,.3);
+  border-radius: 10px; padding: .6rem .9rem;
+  display: flex; align-items: center; gap: .6rem;
+  z-index: 2; min-width: 110px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  transition: border-color .3s, box-shadow .3s;
+}
+.eco-node:hover {
+  border-color: rgba(124,111,255,.7);
+  box-shadow: 0 4px 24px rgba(124,111,255,.2);
+}
+.eco-node-mono {
+  font-family: 'Space Mono', monospace; font-size: .65rem;
+  font-weight: 700; color: var(--accent2); min-width: 28px; text-align: center;
+}
+.eco-node-name {
+  font-size: .75rem; font-weight: 400; color: var(--text);
+}
+
+/* ── IMPACT ──────────────────────────────── */
+.impact-row {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  max-width: 1000px; margin: 0 auto;
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+}
+.impact-cell {
+  background: var(--surface); padding: 2.5rem 1.5rem; text-align: center;
+  position: relative; overflow: hidden; transition: background .25s;
+}
+.impact-cell:hover { background: rgba(124,111,255,.06); }
+.impact-glow {
+  position: absolute; width: 60px; height: 60px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,111,255,.25) 0%, transparent 70%);
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  opacity: 0; transition: opacity .4s;
+}
+.impact-cell:hover .impact-glow { opacity: 1; }
+.impact-num {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-size: clamp(3rem, 5vw, 5rem); font-weight: 300; color: var(--text);
+  line-height: 1; display: block; position: relative; z-index: 1;
+}
+.impact-label {
+  font-family: 'Space Mono', monospace; font-size: .54rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-muted); margin-top: .6rem; display: block; line-height: 1.65;
+  position: relative; z-index: 1;
+}
+
+/* ── FOOTER ──────────────────────────────── */
+footer {
+  position: relative; z-index: 1; padding: 2rem 2.5rem;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-logo {
+  font-family: 'Orbitron', sans-serif; font-size: .82rem;
+  font-weight: 700; letter-spacing: .1em;
+  background: linear-gradient(135deg, var(--accent3), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.footer-copy {
+  font-family: 'Space Mono', monospace; font-size: .56rem;
+  color: var(--text-muted); letter-spacing: .08em; opacity: .5;
+}
+
+/* ── RESPONSIVE ──────────────────────────── */
+@media (max-width: 900px) {
+  #hero { grid-template-columns: 1fr; gap: 3rem; }
+  .hero-right { display: none; }
+  .projects-grid { grid-template-columns: 1fr 1fr; }
+  .impact-row { grid-template-columns: repeat(2,1fr); }
+  .hero-stats { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 600px) {
+  .projects-grid { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="cur-dot"></div>
+<div id="cur-ring"></div>
+
+<div class="orb orb-1" aria-hidden="true"></div>
+<div class="orb orb-2" aria-hidden="true"></div>
+<div class="orb orb-3" aria-hidden="true"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo">TC·AI</a>
+  <ul class="nav-links">
+    <li><a href="#proyectos">Proyectos</a></li>
+    <li><a href="#stack">Stack</a></li>
+    <li><a href="#impacto">Impacto</a></li>
+  </ul>
+  <div class="nav-badge">
+    <span class="live-dot"></span>
+    Aeropuertos Uruguay
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-left">
+    <div class="hero-pill">Automatización activa · 2026</div>
+
+    <h1 class="hero-title">
+      <em>Tamara</em>
+      <span class="grad">Castro</span>
+    </h1>
+
+    <p class="hero-desc" id="hero-desc">
+      <span id="tw-out"></span><span id="tw-cur" aria-hidden="true">|</span>
+    </p>
+
+    <div class="hero-ctas">
+      <a href="#proyectos" class="cta-primary">Ver proyectos</a>
+      <a href="#stack" class="cta-ghost">Stack tecnológico</a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-num">6</span>
+        <span class="stat-label">Proyectos</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">3</span>
+        <span class="stat-label">Sistemas</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">8+</span>
+        <span class="stat-label">Herramientas</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">IA</span>
+        <span class="stat-label">Enfoque central</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORBITAL -->
+  <div class="hero-right">
+    <canvas id="orbital-canvas"></canvas>
+  </div>
+</section>
+
+<!-- PROYECTOS -->
+<section id="proyectos">
+  <div class="section-header reveal">
+    <span class="section-eyebrow">Registro operativo</span>
+    <h2 class="section-title">Casos de <strong>Uso</strong></h2>
+  </div>
+
+  <div class="projects-grid reveal">
+
+    <div class="proj-card" style="--card-grad: linear-gradient(90deg,#7c6fff,#06c8ff)">
+      <div class="proj-num">EXP-01 <span class="proj-num-badge">IA · Agentes</span></div>
+      <div class="proj-title">Bot Interno + Facturación Interior</div>
+      <p class="proj-desc">Dos agentes conversacionales para consultas sobre compras, proveedores, facturación SAP y procesos de autorización.</p>
+      <div class="proj-tags">
+        <span class="proj-tag">Copilot Studio</span>
+        <span class="proj-tag">Power Automate</span>
+        <span class="proj-tag">M365</span>
+      </div>
+      <button class="proj-toggle">
+        <span class="proj-toggle-icon"><svg width="8" height="8" viewBox="0 0 8 8"><line x1="4" y1="1" x2="4" y2="7" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="4" x2="7" y2="4" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        Ver detalle
+      </button>
+      <div class="proj-detail">
+        <div class="detail-grid">
+          <div class="detail-col"><h5>Problema</h5><ul><li>Consultas repetitivas consumen tiempo</li><li>Respuestas inconsistentes</li><li>Conocimiento disperso</li></ul></div>
+          <div class="detail-col"><h5>Solución</h5><ul><li>Documentos como fuente de verdad</li><li>Control de instrucciones exclusivo</li><li>Derivación a humano</li></ul></div>
+          <div class="detail-col"><h5>Próximos pasos</h5><ul><li>Validar documentos fuente</li><li>Definir FAQs</li><li>Publicar piloto</li></ul></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-card" style="--card-grad: linear-gradient(90deg,#06c8ff,#7c6fff)">
+      <div class="proj-num">EXP-02 <span class="proj-num-badge">Python · Fiscal</span></div>
+      <div class="proj-title">Conciliación DGI — SAP</div>
+      <p class="proj-desc">Compara información fiscal de DGI con registros SAP para detectar diferencias, omisiones y errores de registración sin revisión manual.</p>
+      <div class="proj-tags">
+        <span class="proj-tag">Python</span>
+        <span class="proj-tag">SAP S/4 HANA</span>
+        <span class="proj-tag">pandas</span>
+      </div>
+      <button class="proj-toggle">
+        <span class="proj-toggle-icon"><svg width="8" height="8" viewBox="0 0 8 8"><line x1="4" y1="1" x2="4" y2="7" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="4" x2="7" y2="4" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        Ver detalle
+      </button>
+      <div class="proj-detail">
+        <div class="detail-grid">
+          <div class="detail-col"><h5>Problema</h5><ul><li>Revisión manual de comprobantes</li><li>Riesgo de errores no detectados</li><li>Proceso tedioso</li></ul></div>
+          <div class="detail-col"><h5>Solución</h5><ul><li>Normalización automática</li><li>Cruce por RUT, factura e importe</li><li>Reporte con hallazgos</li></ul></div>
+          <div class="detail-col"><h5>Próximos pasos</h5><ul><li>Definir estructura de archivos</li><li>Construir normalización</li><li>Probar con datos reales</li></ul></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-card" style="--card-grad: linear-gradient(90deg,#a78bfa,#06c8ff)">
+      <div class="proj-num">EXP-03 <span class="proj-num-badge">BI · Reportes</span></div>
+      <div class="proj-title">Reportes Nubceo</div>
+      <p class="proj-desc">Mejora extracción, procesamiento y visualización de reportes de Nubceo, reduciendo trabajo manual de descarga y análisis periódico.</p>
+      <div class="proj-tags">
+        <span class="proj-tag">Python</span>
+        <span class="proj-tag">Excel</span>
+        <span class="proj-tag">Power BI</span>
+      </div>
+      <button class="proj-toggle">
+        <span class="proj-toggle-icon"><svg width="8" height="8" viewBox="0 0 8 8"><line x1="4" y1="1" x2="4" y2="7" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="4" x2="7" y2="4" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        Ver detalle
+      </button>
+      <div class="proj-detail">
+        <div class="detail-grid">
+          <div class="detail-col"><h5>Problema</h5><ul><li>Descarga y procesamiento manual</li><li>Datos sin consolidar</li><li>Pasos repetitivos</li></ul></div>
+          <div class="detail-col"><h5>Solución</h5><ul><li>Pipeline automático</li><li>Consolidación en Power BI</li><li>Detección de inconsistencias</li></ul></div>
+          <div class="detail-col"><h5>Próximos pasos</h5><ul><li>Documentar reportes</li><li>Definir campos</li><li>Integrar dashboard</li></ul></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-card" style="--card-grad: linear-gradient(90deg,#06c8ff,#a78bfa)">
+      <div class="proj-num">EXP-04 <span class="proj-num-badge">BI · Operativo</span></div>
+      <div class="proj-title">Reportes SGA</div>
+      <p class="proj-desc">Transforma exportaciones del sistema SGA en reportes limpios, cruzados con SAP y visualizados en Power BI.</p>
+      <div class="proj-tags">
+        <span class="proj-tag">Python</span>
+        <span class="proj-tag">Power BI</span>
+        <span class="proj-tag">SAP</span>
+      </div>
+      <button class="proj-toggle">
+        <span class="proj-toggle-icon"><svg width="8" height="8" viewBox="0 0 8 8"><line x1="4" y1="1" x2="4" y2="7" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="4" x2="7" y2="4" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        Ver detalle
+      </button>
+      <div class="proj-detail">
+        <div class="detail-grid">
+          <div class="detail-col"><h5>Problema</h5><ul><li>Exportaciones sin procesar</li><li>Datos no integrados</li><li>Sin visualización</li></ul></div>
+          <div class="detail-col"><h5>Solución</h5><ul><li>Limpieza de exportaciones</li><li>Cruce con SAP</li><li>Consolidación y visualización</li></ul></div>
+          <div class="detail-col"><h5>Próximos pasos</h5><ul><li>Documentar reportes SGA</li><li>Definir campos</li><li>Construir limpieza</li></ul></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-card" style="--card-grad: linear-gradient(90deg,#7c6fff,#34d399)">
+      <div class="proj-num">EXP-05 <span class="proj-num-badge">Python · Facturas</span></div>
+      <div class="proj-title">Tilsor — SAP</div>
+      <p class="proj-desc">Compara facturas Tilsor vs SAP para Puerta del Sur y CAISA. Lógicas distintas por tipo de factura, incluyendo parking por bolsas.</p>
+      <div class="proj-tags">
+        <span class="proj-tag">Python</span>
+        <span class="proj-tag">SAP S/4 HANA</span>
+        <span class="proj-tag">pandas</span>
+      </div>
+      <button class="proj-toggle">
+        <span class="proj-toggle-icon"><svg width="8" height="8" viewBox="0 0 8 8"><line x1="4" y1="1" x2="4" y2="7" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="4" x2="7" y2="4" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        Ver detalle
+      </button>
+      <div class="proj-detail">
+        <div class="detail-grid">
+          <div class="detail-col"><h5>Problema</h5><ul><li>Conciliación manual consume horas</li><li>Tres tipos de factura distintos</li><li>Parking en bolsas agrupadas</li></ul></div>
+          <div class="detail-col"><h5>Solución</h5><ul><li>Clasificación por tipo</li><li>Comparación directa</li><li>Lógica especial para parking</li></ul></div>
+          <div class="detail-col"><h5>Próximos pasos</h5><ul><li>Conseguir archivos ejemplo</li><li>Definir regla parking</li><li>Script Python v1</li></ul></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-card" style="--card-grad: linear-gradient(90deg,#34d399,#7c6fff)">
+      <div class="proj-num">EXP-06 <span class="proj-num-badge">SAP · Carga</span></div>
+      <div class="proj-title">Carga Masiva SAP — SINAI</div>
+      <p class="proj-desc">Automatiza la preparación de planilla para carga masiva en SAP S/4 HANA desde Tilsor, eliminando la carga individual de facturas.</p>
+      <div class="proj-tags">
+        <span class="proj-tag">Python</span>
+        <span class="proj-tag">SAP S/4 HANA</span>
+        <span class="proj-tag">Tilsor</span>
+      </div>
+      <button class="proj-toggle">
+        <span class="proj-toggle-icon"><svg width="8" height="8" viewBox="0 0 8 8"><line x1="4" y1="1" x2="4" y2="7" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="4" x2="7" y2="4" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        Ver detalle
+      </button>
+      <div class="proj-detail">
+        <div class="detail-grid">
+          <div class="detail-col"><h5>Problema</h5><ul><li>Carga una por una</li><li>Proceso lento con errores</li><li>Sin estandarización</li></ul></div>
+          <div class="detail-col"><h5>Solución</h5><ul><li>Exportación desde Tilsor</li><li>Limpieza automática</li><li>Planilla en formato SAP</li></ul></div>
+          <div class="detail-col"><h5>Próximos pasos</h5><ul><li>Definir transacción SAP</li><li>Validar planilla</li><li>Probar en ambiente test</li></ul></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- STACK / ECOSYSTEM -->
+<section id="stack">
+  <div class="section-header reveal">
+    <span class="section-eyebrow">Herramientas conectadas</span>
+    <h2 class="section-title">Espacio <strong>Unificado</strong></h2>
+  </div>
+  <div class="ecosystem-wrap reveal">
+    <div class="ecosystem-canvas-wrap">
+      <canvas id="eco-canvas"></canvas>
+      <div class="eco-center">
+        <div class="eco-center-label" style="font-size:.55rem;letter-spacing:.06em;font-family:'Space Mono',monospace;font-weight:400;text-align:center;line-height:1.4">Herramientas<br>conectadas</div>
+      </div>
+      <!-- nodes positioned via JS -->
+      <div class="eco-node" id="en-py"  ><span class="eco-node-mono">PY</span><span class="eco-node-name">Python</span></div>
+      <div class="eco-node" id="en-bi"  ><span class="eco-node-mono">BI</span><span class="eco-node-name">Power BI</span></div>
+      <div class="eco-node" id="en-sap" ><span class="eco-node-mono">SAP</span><span class="eco-node-name">S/4 HANA</span></div>
+      <div class="eco-node" id="en-cs"  ><span class="eco-node-mono">CS</span><span class="eco-node-name">Copilot Studio</span></div>
+      <div class="eco-node" id="en-pa"  ><span class="eco-node-mono">PA</span><span class="eco-node-name">Power Automate</span></div>
+      <div class="eco-node" id="en-xl"  ><span class="eco-node-mono">XL</span><span class="eco-node-name">Excel</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- IMPACTO -->
+<section id="impacto">
+  <div class="section-header reveal">
+    <span class="section-eyebrow">Métricas del trabajo</span>
+    <h2 class="section-title">Impacto <strong>Operativo</strong></h2>
+  </div>
+  <div class="impact-row reveal">
+    <div class="impact-cell"><div class="impact-glow"></div><span class="impact-num" data-count="6">0</span><span class="impact-label">Proyectos de<br>automatización</span></div>
+    <div class="impact-cell"><div class="impact-glow"></div><span class="impact-num" data-count="3">0</span><span class="impact-label">Sistemas<br>integrados</span></div>
+    <div class="impact-cell"><div class="impact-glow"></div><span class="impact-num" data-count="5">0</span><span class="impact-label">Procesos manuales<br>en eliminación</span></div>
+    <div class="impact-cell"><div class="impact-glow"></div><span class="impact-num" data-count="0">0</span><span class="impact-label">Errores de carga<br>tras automatización</span></div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">TC·AI</div>
+  <div class="footer-copy">Tamara Castro · Aeropuertos Uruguay · 2026</div>
+</footer>
+
+<script>
+// ── CURSOR ────────────────────────────────
+const dot = document.getElementById('cur-dot');
+const ring = document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e=>{ mx=e.clientX; my=e.clientY; dot.style.cssText=`left:${mx}px;top:${my}px`; });
+(function loop(){ rx+=(mx-rx)*.11; ry+=(my-ry)*.11; ring.style.cssText=`left:${rx}px;top:${ry}px`; requestAnimationFrame(loop); })();
+document.querySelectorAll('a,button,.proj-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>ring.classList.add('cur-big'));
+  el.addEventListener('mouseleave',()=>ring.classList.remove('cur-big'));
+});
+
+// ── NAV ───────────────────────────────────
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>40),{passive:true});
+
+// ── TYPEWRITER ────────────────────────────
+const twOut=document.getElementById('tw-out');
+const twCur=document.getElementById('tw-cur');
+const twTxt='Diseño e implemento soluciones de automatización e inteligencia artificial que transforman procesos operativos en sistemas inteligentes y eficientes dentro del ecosistema de administración y finanzas de Aeropuertos Uruguay.';
+let ti=0;
+twCur.style.cssText='animation:tw-blink .6s step-end infinite';
+document.head.insertAdjacentHTML('beforeend','<style>@keyframes tw-blink{0%,100%{opacity:1}50%{opacity:0}}</style>');
+function tw(){ if(ti<twTxt.length){ twOut.textContent+=twTxt[ti++]; setTimeout(tw,20+Math.random()*30); } else twCur.style.display='none'; }
+setTimeout(tw,1200);
+
+// ── ORBITAL CANVAS ────────────────────────
+(function(){
+  const c = document.getElementById('orbital-canvas');
+  const ctx = c.getContext('2d');
+  let S = 0;
+
+  function resize(){
+    const w = c.parentElement.offsetWidth;
+    S = Math.min(w, 480);
+    c.width = S * devicePixelRatio;
+    c.height = S * devicePixelRatio;
+    c.style.width = S + 'px';
+    c.style.height = S + 'px';
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+  resize();
+  window.addEventListener('resize', ()=>{ ctx.setTransform(1,0,0,1,0,0); resize(); });
+
+  const cx = () => S/2, cy = () => S/2;
+
+  // stars
+  const stars = Array.from({length:120}, ()=>({
+    x: Math.random(), y: Math.random(),
+    r: Math.random()*1.2+.2,
+    a: Math.random()*.6+.1,
+    twinkle: Math.random()*Math.PI*2
+  }));
+
+  // orbits: radius factor, speed, dot count, color, tilt
+  const orbits = [
+    { rf:.18, speed:.008,  dots:1, color:'rgba(124,111,255,', tilt:.3,  dotR:4 },
+    { rf:.28, speed:.005,  dots:2, color:'rgba(6,200,255,',   tilt:.5,  dotR:3 },
+    { rf:.38, speed:.003,  dots:3, color:'rgba(167,139,250,', tilt:.15, dotR:2.5 },
+    { rf:.48, speed:.002,  dots:4, color:'rgba(6,200,255,',   tilt:.6,  dotR:2 },
+    { rf:.58, speed:.0013, dots:2, color:'rgba(124,111,255,', tilt:.35, dotR:2 },
+  ];
+
+  // offset angles per dot
+  orbits.forEach(o=>{
+    o.angles = Array.from({length:o.dots},(_,i)=> i*(Math.PI*2/o.dots));
+  });
+
+  let t = 0;
+
+  function drawFrame(){
+    ctx.clearRect(0,0,S,S);
+    const ox=cx(), oy=cy();
+    t += 1;
+
+    // stars
+    stars.forEach(s=>{
+      const pulse = Math.sin(t*.02 + s.twinkle)*.3+.7;
+      ctx.beginPath();
+      ctx.arc(s.x*S, s.y*S, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(200,220,255,${s.a*pulse})`;
+      ctx.fill();
+    });
+
+    // core glow
+    const cg = ctx.createRadialGradient(ox,oy,0,ox,oy,S*.1);
+    cg.addColorStop(0,'rgba(124,111,255,.55)');
+    cg.addColorStop(.5,'rgba(80,60,200,.18)');
+    cg.addColorStop(1,'transparent');
+    ctx.beginPath(); ctx.arc(ox,oy,S*.1,0,Math.PI*2);
+    ctx.fillStyle=cg; ctx.fill();
+
+    // inner sphere
+    const sg = ctx.createRadialGradient(ox-S*.025,oy-S*.025,0,ox,oy,S*.065);
+    sg.addColorStop(0,'rgba(200,185,255,.9)');
+    sg.addColorStop(.4,'rgba(124,111,255,.7)');
+    sg.addColorStop(1,'rgba(40,20,120,.4)');
+    ctx.beginPath(); ctx.arc(ox,oy,S*.065,0,Math.PI*2);
+    ctx.fillStyle=sg; ctx.fill();
+
+    // orbits
+    orbits.forEach((o,oi)=>{
+      const r = S * o.rf;
+      const angle = t * o.speed;
+
+      // draw ellipse orbit (tilt via yscale)
+      ctx.save();
+      ctx.translate(ox,oy);
+      ctx.scale(1, Math.cos(o.tilt));
+      ctx.beginPath();
+      ctx.arc(0,0,r,0,Math.PI*2);
+      ctx.strokeStyle = o.color+'.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+
+      // dots on orbit
+      o.angles.forEach((baseAngle, di)=>{
+        const a = angle + baseAngle;
+        const ex = ox + Math.cos(a)*r;
+        const ey = oy + Math.sin(a)*r*Math.cos(o.tilt);
+
+        // trail
+        for(let tr=1; tr<=6; tr++){
+          const ta = a - tr*.08;
+          const tx2 = ox + Math.cos(ta)*r;
+          const ty2 = oy + Math.sin(ta)*r*Math.cos(o.tilt);
+          ctx.beginPath(); ctx.arc(tx2,ty2,o.dotR*(1-tr/8),0,Math.PI*2);
+          ctx.fillStyle = o.color+((.5-tr*.07))+')';
+          ctx.fill();
+        }
+
+        // dot
+        const dg = ctx.createRadialGradient(ex,ey,0,ex,ey,o.dotR*2);
+        dg.addColorStop(0,'rgba(255,255,255,.95)');
+        dg.addColorStop(.4,o.color+'.8)');
+        dg.addColorStop(1,'transparent');
+        ctx.beginPath(); ctx.arc(ex,ey,o.dotR,0,Math.PI*2);
+        ctx.fillStyle=dg; ctx.fill();
+
+        // tiny ping on first dot of first orbit
+        if(oi===0 && di===0){
+          const ping = ((t*o.speed) % (Math.PI*2)) / (Math.PI*2);
+          const pr = o.dotR + ping*18;
+          ctx.beginPath(); ctx.arc(ex,ey,pr,0,Math.PI*2);
+          ctx.strokeStyle = o.color+(Math.max(0,.4-ping*.4))+')';
+          ctx.lineWidth=1; ctx.stroke();
+        }
+      });
+    });
+
+    requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+})();
+
+// ── REVEAL ────────────────────────────────
+const revObs=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){e.target.classList.add('visible');revObs.unobserve(e.target);} }),{threshold:.07,rootMargin:'0px 0px -30px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
+
+// ── PROJECTS TOGGLE ───────────────────────
+document.querySelectorAll('.proj-toggle').forEach(btn=>{
+  btn.addEventListener('click',e=>{
+    e.stopPropagation();
+    const card=btn.closest('.proj-card');
+    const isOpen=card.classList.contains('open');
+    document.querySelectorAll('.proj-card').forEach(c=>c.classList.remove('open'));
+    if(!isOpen) card.classList.add('open');
+    btn.querySelector('.proj-toggle').textContent=isOpen?'Ver detalle':'Cerrar';
+  });
+});
+
+// ── ECOSYSTEM CANVAS ─────────────────────
+const ec=document.getElementById('eco-canvas');
+const ectx=ec.getContext('2d');
+const wrap=ec.parentElement;
+
+const nodeIds=['en-py','en-bi','en-sap','en-cs','en-pa','en-xl'];
+const angles=[270,330,30,90,150,210].map(a=>a*Math.PI/180);
+let packets2=[], ecoW=0, ecoH=0, cx=0, cy=0, radius=0;
+
+function ecoResize(){
+  ecoW=ec.width=wrap.offsetWidth;
+  ecoH=ec.height=wrap.offsetHeight;
+  cx=ecoW/2; cy=ecoH/2;
+  radius=Math.min(ecoW,ecoH)*0.33;
+  nodeIds.forEach((id,i)=>{
+    const nd=document.getElementById(id);
+    const x=cx+Math.cos(angles[i])*radius;
+    const y=cy+Math.sin(angles[i])*radius;
+    nd.style.left=x+'px'; nd.style.top=y+'px';
+  });
+}
+ecoResize();
+window.addEventListener('resize',ecoResize);
+
+function spawnEco(){
+  const i=Math.floor(Math.random()*nodeIds.length);
+  const ax=cx+Math.cos(angles[i])*radius;
+  const ay=cy+Math.sin(angles[i])*radius;
+  const toCenter=Math.random()<.5;
+  packets2.push({
+    x1:toCenter?ax:cx, y1:toCenter?ay:cy,
+    x2:toCenter?cx:ax, y2:toCenter?cy:ay,
+    t:0, speed:.012+Math.random()*.008,
+    color:toCenter?'rgba(124,111,255,':'rgba(6,200,255,'
+  });
+}
+setInterval(spawnEco, 600);
+
+function ecoFrame(){
+  ectx.clearRect(0,0,ecoW,ecoH);
+  // lines
+  nodeIds.forEach((_,i)=>{
+    const nx=cx+Math.cos(angles[i])*radius;
+    const ny=cy+Math.sin(angles[i])*radius;
+    ectx.beginPath(); ectx.moveTo(cx,cy); ectx.lineTo(nx,ny);
+    ectx.strokeStyle='rgba(124,111,255,.12)'; ectx.lineWidth=1; ectx.stroke();
+  });
+  // center glow
+  const g=ectx.createRadialGradient(cx,cy,0,cx,cy,55);
+  g.addColorStop(0,'rgba(124,111,255,.18)'); g.addColorStop(1,'transparent');
+  ectx.beginPath(); ectx.arc(cx,cy,55,0,Math.PI*2); ectx.fillStyle=g; ectx.fill();
+  // packets
+  packets2=packets2.filter(p=>p.t<=1);
+  packets2.forEach(p=>{
+    p.t+=p.speed;
+    const x=p.x1+(p.x2-p.x1)*p.t;
+    const y=p.y1+(p.y2-p.y1)*p.t;
+    const a=Math.sin(p.t*Math.PI)*0.9;
+    ectx.beginPath(); ectx.arc(x,y,3,0,Math.PI*2);
+    ectx.fillStyle=p.color+a+')'; ectx.fill();
+    ectx.beginPath(); ectx.arc(x,y,6,0,Math.PI*2);
+    ectx.fillStyle=p.color+(a*.2)+')'; ectx.fill();
+  });
+  requestAnimationFrame(ecoFrame);
+}
+ecoFrame();
+
+// ── IMPACT COUNTERS ───────────────────────
+function counter(el,target,dur){
+  const s=performance.now();
+  (function f(now){ const p=Math.min((now-s)/dur,1); const e=1-Math.pow(1-p,4);
+    el.textContent=Math.round(target*e); if(p<1) requestAnimationFrame(f); else el.textContent=target; })(s);
+}
+const iObs=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){ e.target.querySelectorAll('.impact-num[data-count]').forEach(el=>counter(el,+el.dataset.count,1400)); iObs.unobserve(e.target); }
+}),{threshold:.25});
+const imp=document.getElementById('impacto'); if(imp) iObs.observe(imp);
+</script>
+</body>
+</html>
